@@ -1,0 +1,28 @@
+name: enqueue
+on:
+  workflow_dispatch:
+    inputs:
+      pr:
+        required: true
+      mode:
+        description: "auto (gh pr merge --auto) or graphql (enqueuePullRequest)"
+        default: auto
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  enqueue:
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ inputs.pr }}
+          MODE: ${{ inputs.mode }}
+        run: |
+          url="https://github.com/$GITHUB_REPOSITORY/pull/$PR"
+          if [ "$MODE" = graphql ]; then
+            id=$(gh pr view "$url" --json id --jq .id)
+            gh api graphql -f query='mutation($id:ID!){enqueuePullRequest(input:{pullRequestId:$id}){mergeQueueEntry{state position}}}' -f id="$id"
+          else
+            gh pr merge --auto --squash "$url"
+          fi
