@@ -10,5 +10,6 @@ jobs:
       - uses: actions/checkout@v4
       - name: Fail if FAIL file exists
         run: |
+          if [[ "$GITHUB_HEAD_REF" == *slow* ]]; then sleep 45; fi
           if [ -f FAIL ]; then echo "FAIL file present"; exit 1; fi
           echo ok
